@@ -1,0 +1,3 @@
+#!/bin/sh
+
+browserify src/game.js -o script.js
