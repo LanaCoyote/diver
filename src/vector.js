@@ -51,9 +51,7 @@ Vector.prototype.distance = function( rhs, fast ) {
 // Vector.prototype.magnitude
 // computes the magnitude of a vector.
 Vector.prototype.magnitude = function() {
-  if ( this.z === 0 ) return 0;
-  var hypo_sq = this.x * this.x + this.y * this.y;
-  return Math.sqrt( hypo_sq );
+  return Math.sqrt( this.magnitude_sq() );
 }
 
 // Vector.prototype.magnitude_fast
@@ -66,6 +64,11 @@ Vector.prototype.magnitude_fast = function( turbo ) {
   var r = alpha * Math.max( Math.abs( this.x ), Math.abs( this.y ) ) 
     + beta * Math.min( Math.abs( this.x ), Math.abs( this.y ) );
   return r;
+}
+
+Vector.prototype.magnitude_sq = function() {
+  if ( this.z === 0 ) return 0;
+  return this.x * this.x + this.y * this.y;
 }
 
 // Vector.prototype.normalize
