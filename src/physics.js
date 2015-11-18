@@ -1,11 +1,18 @@
 var Vector = require( './vector' );
 
+function friction( vec, amt ) {
+  var newx = vec.x > 0 ? Math.max(0, vec.x - amt) : Math.min(0, vec.x + amt);
+  var newy = vec.y > 0 ? Math.max(0, vec.y - amt) : Math.min(0, vec.y + amt);
+  return new Vector( newx, newy );
+}
+
 function physicsLoop( dt ) {
   G_PhysicsObjects.forEach( function( phys ) {
     var newvel = phys.velocity.scalar_mul( dt );
     var newpos = phys.transform.pos.add( newvel );
     phys.transform.setPos( newpos );
 
+    phys.velocity = friction( phys.velocity, 1 );
     //phys.transform.velocity = 
   } );
 }
@@ -59,7 +66,7 @@ Transform.prototype.move = function( x, y ) {
                                   AABB
 ******************************************************************************/
 function AABB( gameObj, topleft, botright ) {
-  this.diagonal = topleft.sub( botright );
+  this.diagonal = botright.sub( topleft );
   this.half_diagonal = this.diagonal.scalar_mul( 0.5 );
   var midpoint = topleft.add( this.half_diagonal );
   Transform.call( this, gameObj, midpoint );

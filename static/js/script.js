@@ -4,10 +4,10 @@ var physics = require('./physics');
 var Vector = require('./vector');
 var Input = require('./input');
 
-var testObject = {}
-new physics.AABB( testObject, new Vector( 5,5 ), new Vector( 10,10 ) );
-new physics.PhysObject( testObject );
-new graphics.Sprite( testObject, "static/images/diver.png" );
+//var testObject = {}
+//new physics.AABB( testObject, new Vector( 5,5 ), new Vector( 10,10 ) );
+//new physics.PhysObject( testObject );
+//new graphics.Sprite( testObject, "static/images/diver.png" );
 
 var ctx = null,
     then = 0,
@@ -21,48 +21,90 @@ window.onload = function() {
 
   input = new Input( window );
 
-  then = Date.now();
+  then = performance.now();
   //testObject.physics.force( new Vector( 100, 0 ) );
 
-  main();
+  var testObjects = [];
+  function createNewObject() {
+    var testObject = {};
+    var startx = Math.random() * 800;
+    var starty = Math.random() * 600;
+    var size = 16 + Math.random() * 64;
+    new physics.AABB( testObject, new Vector( startx, starty ), new Vector( startx + size, starty + size ) );
+    new physics.PhysObject( testObject );
+    new graphics.Sprite( testObject, "static/images/diver.png" );
+    testObjects.push( testObject );
+  }
+
+
+  var G_RAFLoop;
+  function main( now ) {
+    G_RAFLoop = requestAnimationFrame( main );
+
+    //var now = Date.now();
+    var dt = (now - then) / 1000;
+    if ( dt < 0.016 ) createNewObject();
+
+    testObjects.forEach( function( obj ) {
+
+      if ( obj.aabb.pos.x > 800 || obj.aabb.pos.x < 0 ) {
+        obj.aabb.pos.x = obj.aabb.pos.x > 800 ? 799 : 1;
+        obj.physics.velocity.x *= -1;
+      }
+      else if ( obj.aabb.pos.y > 800 || obj.aabb.pos.y < 0 ) {
+        obj.aabb.pos.y = obj.aabb.pos.y > 800 ? 799 : 1;
+        obj.physics.velocity.y *= -1;
+      } else 
+      obj.physics.force( new Vector( 5 - Math.random() * 10, 5 - Math.random() * 10 ) );
+    } );
+
+    //if( input.isKeyDown( 40 ) ) {
+      //testObject.physics.force( new Vector( 0, 5 ) );
+    //}
+
+    //if( input.isKeyDown( 38 ) ) {
+      //testObject.physics.force( new Vector( 0, -5 ) );
+    //}
+
+    //if( input.isKeyDown( 39 ) ) {
+      //testObject.physics.force( new Vector( 5, 0 ) );
+    //}
+
+    //if( input.isKeyDown( 37 ) ) {
+      //testObject.physics.force( new Vector( -5, 0 ) );
+    //}
+
+    //if( testObject.physics.velocity.magnitude_sq() > 75 * 75 ) {
+      //testObject.physics.velocity = testObject.physics.velocity.set_magnitude( 75 );
+    //}
+  
+    //testObject.aabb.move( new Vector( 1,0 ) );
+    physics.physicsLoop( dt );
+    graphics.drawLoop( ctx );
+
+    var fps = "fps: " + (1/dt).toString();
+    var objs = "objs: " + (testObjects.length).toString();
+
+    ctx.fillStyle = "red";
+    ctx.font = "24px monospace";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.boxShadow = "5px 5px 5px black";
+    ctx.fillText( fps, 0, 0 );
+    ctx.fillText( objs, 0, 32 ); 
+
+
+
+    then = now;
+  }
+
+  main( then );
 }
 
 // Cross-browser support for requestAnimationFrame
 var w = window;
 requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame || w.msRequestAnimationFrame || w.mozRequestAnimationFrame;
 
-function main() {
-  var now = Date.now();
-  var dt = (now - then) / 1000;
-
-  if( input.isKeyDown( 40 ) ) {
-    testObject.physics.force( new Vector( 0, 1 ) );
-  }
-
-  if( input.isKeyDown( 38 ) ) {
-    testObject.physics.force( new Vector( 0, -1 ) );
-  }
-
-  if( input.isKeyDown( 39 ) ) {
-    testObject.physics.force( new Vector( 1, 0 ) );
-  }
-
-  if( input.isKeyDown( 37 ) ) {
-    testObject.physics.force( new Vector( -1, 0 ) );
-  }
-
-  if( testObject.physics.velocity.magnitude_sq() > 45 * 45 ) {
-    testObject.physics.velocity = testObject.physics.velocity.set_magnitude( 45 );
-  }
-  
-  //testObject.aabb.move( new Vector( 1,0 ) );
-  physics.physicsLoop( dt );
-  graphics.drawLoop( ctx );
-
-  then = now;
-
-  requestAnimationFrame( main );
-}
 
 },{"./graphics":2,"./input":3,"./physics":4,"./vector":5}],2:[function(require,module,exports){
 function clearCtx( ctx ) {
@@ -106,7 +148,7 @@ function Sprite( gameObj,src ) {
 Sprite.prototype.draw = function( ctx ) {
   if ( this.ready ) {
     var posvec = this.transform.topleft ? this.transform.topleft() : this.transform.pos;
-    ctx.drawImage( this.image, posvec.x, posvec.y );
+    ctx.drawImage( this.image, posvec.x, posvec.y, this.image.width, this.image.height );
     return true;
   }
   return false;
@@ -166,12 +208,19 @@ module.exports = InputManager;
 },{}],4:[function(require,module,exports){
 var Vector = require( './vector' );
 
+function friction( vec, amt ) {
+  var newx = vec.x > 0 ? Math.max(0, vec.x - amt) : Math.min(0, vec.x + amt);
+  var newy = vec.y > 0 ? Math.max(0, vec.y - amt) : Math.min(0, vec.y + amt);
+  return new Vector( newx, newy );
+}
+
 function physicsLoop( dt ) {
   G_PhysicsObjects.forEach( function( phys ) {
     var newvel = phys.velocity.scalar_mul( dt );
     var newpos = phys.transform.pos.add( newvel );
     phys.transform.setPos( newpos );
 
+    phys.velocity = friction( phys.velocity, 1 );
     //phys.transform.velocity = 
   } );
 }
@@ -225,7 +274,7 @@ Transform.prototype.move = function( x, y ) {
                                   AABB
 ******************************************************************************/
 function AABB( gameObj, topleft, botright ) {
-  this.diagonal = topleft.sub( botright );
+  this.diagonal = botright.sub( topleft );
   this.half_diagonal = this.diagonal.scalar_mul( 0.5 );
   var midpoint = topleft.add( this.half_diagonal );
   Transform.call( this, gameObj, midpoint );

@@ -39,7 +39,7 @@ function Sprite( gameObj,src ) {
 Sprite.prototype.draw = function( ctx ) {
   if ( this.ready ) {
     var posvec = this.transform.topleft ? this.transform.topleft() : this.transform.pos;
-    ctx.drawImage( this.image, posvec.x, posvec.y );
+    ctx.drawImage( this.image, posvec.x, posvec.y, this.image.width, this.image.height );
     return true;
   }
   return false;
