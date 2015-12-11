@@ -1,39 +1,43 @@
 var Vector = require( './vector' );
 
-function friction( vec, amt ) {
-  var newx = vec.x > 0 ? Math.max(0, vec.x - amt) : Math.min(0, vec.x + amt);
-  var newy = vec.y > 0 ? Math.max(0, vec.y - amt) : Math.min(0, vec.y + amt);
-  return new Vector( newx, newy );
-}
-
 function physicsLoop( dt ) {
+
   G_PhysicsObjects.forEach( function( phys ) {
+
+    // move every object based on their current velocity
     var newvel = phys.velocity.scalar_mul( dt );
     var newpos = phys.transform.pos.add( newvel );
     phys.transform.setPos( newpos );
 
-    //phys.velocity = friction( phys.velocity, 1 );
-    //phys.transform.velocity = 
   } );
+
 }
 
 function getObjsWithin( point, radius ) {
+
   return G_PhysicsObjects.filter( function( obj ) {
     return ( obj.transform.pos.distance_sq( point ) <= radius * radius );
   } );
+
 }
 
 var G_PhysicsObjects = [];
 function PhysObject( gameObj ) {
+
+  // get the first available transform
   this.transform = gameObj.aabb || gameObj.transform || null;
   if ( !this.transform ) return console.error( "Tried to create a physics object with no transform" );
 
+  // associate the physics compoenent to its parent
   this.parent = gameObj;
   gameObj.physics = this;
 
+  // set initial velocity
   this.velocity = new Vector( 0, 0 );
 
+  // push the physics component onto the global list
   G_PhysicsObjects.push( this );
+  
 }
 
 function clearPhysObjects() {
