@@ -9,6 +9,7 @@ function InputManager( w ) {
 
   w.addEventListener( "keydown", this.pressKey.bind( this ), false );
   w.addEventListener( "keyup", this.releaseKey.bind( this ), false );
+
 }
 
 InputManager.prototype.pressKey = function( key ) {
@@ -35,6 +36,11 @@ InputManager.prototype.addBindOnPress = function( key, bind ) {
 
 InputManager.prototype.addBindOnRelease = function( key, bind ) {
   this.bindsOnRelease[key] ? this.bindsOnRelease[key].push( bind ) : this.bindsOnRelease[key] = [bind];
+}
+
+InputManager.prototype.clearBinds = function() {
+  this.bindsOnPress = {};
+  this.bindsOnRelease = {};
 }
 
 InputManager.prototype.isKeyDown = function( key, bind ) {

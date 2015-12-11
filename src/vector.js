@@ -48,6 +48,10 @@ Vector.prototype.distance = function( rhs, fast ) {
   return this.sub( rhs ).magnitude();
 }
 
+Vector.prototype.distance_sq = function( rhs ) {
+  return this.sub( rhs ).magnitude_sq();
+}
+
 // Vector.prototype.magnitude
 // computes the magnitude of a vector.
 Vector.prototype.magnitude = function() {
@@ -99,8 +103,9 @@ Vector.prototype.midpoint = function() {
 
 // Vector.prototype.angle
 // returns the angle of a vector
-// TODO: write this function
-
+Vector.prototype.angle = function() {
+  return Math.atan2( this.y, this.x );
+}
 
 
 module.exports = Vector;
